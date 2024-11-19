@@ -2,7 +2,7 @@
 
 A modern implementation of the classic Tetris game with endless gameplay and level progression. Built with HTML, CSS, and JavaScript.
 
-![Game Preview]((https://boxdudestudio.itch.io/endless-tetris))
+![Game Preview](./sample-image.png.)
 
 ## 🎮 Features
 
