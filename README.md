@@ -1,11 +1,9 @@
 # Enhanced Tetris
-
 A modern implementation of the classic Tetris game with endless gameplay and level progression. Built with HTML, CSS, and JavaScript.
 
-![Game Preview](./sample-image.png.)
+![Game Preview](./sample-image.png)
 
 ## 🎮 Features
-
 - Endless gameplay mode
 - Progressive difficulty scaling
 - Real-time score tracking
@@ -15,7 +13,6 @@ A modern implementation of the classic Tetris game with endless gameplay and lev
 - Clean, minimalist interface
 
 ## 🎯 How to Play
-
 ### Controls
 - **Left Arrow (←)** - Move piece left
 - **Right Arrow (→)** - Move piece right
@@ -30,7 +27,6 @@ A modern implementation of the classic Tetris game with endless gameplay and lev
 - Game speed increases with level
 
 ## 🚀 Getting Started
-
 1. Clone the repository:
 ```bash
 git clone https://github.com/callmeianwu/enhanced-tetris.git
@@ -41,14 +37,11 @@ git clone https://github.com/callmeianwu/enhanced-tetris.git
 3. Start playing!
 
 ## 🛠️ Technical Details
-
 ### Prerequisites
 - Modern web browser with JavaScript enabled
 - No additional dependencies required
 
-
 ## 🤝 Contributing
-
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
@@ -56,16 +49,13 @@ git clone https://github.com/callmeianwu/enhanced-tetris.git
 5. Open a Pull Request
 
 ## 📝 License
-
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
-
 - Original Tetris game created by Alexey Pajitnov
 - Box Dude Studio for the enhanced implementation
 
 ## 🔗 Links
-
 - [Box Dude Studio](https://boxdudestudio.itch.io/)
 - [Play Online](https://boxdudestudio.itch.io/endless-tetris)
 - [Report Bug](https://github.com/callmeianwu/enhanced-tetris/issues)
