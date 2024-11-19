@@ -63,11 +63,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Original Tetris game created by Alexey Pajitnov
 - Box Dude Studio for the enhanced implementation
-- Contributors and community members
 
 ## 🔗 Links
 
 - [Box Dude Studio](https://boxdudestudio.itch.io/)
-- [Play Online]((https://boxdudestudio.itch.io/endless-tetris))
+- [Play Online](https://boxdudestudio.itch.io/endless-tetris)
 - [Report Bug](https://github.com/callmeianwu/enhanced-tetris/issues)
 - [Request Feature](https://github.com/callmeianwu/enhanced-tetris/issues)
