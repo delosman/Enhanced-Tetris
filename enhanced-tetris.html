@@ -77,10 +77,8 @@
         let level = 1;
         let linesCleared = 0;
 
-        // Matrix representing the game board
         const board = Array(rows).fill().map(() => Array(cols).fill(0));
 
-        // Tetromino shapes
         const pieces = [
             [[1, 1, 1, 1]], // I
             [[1, 1], [1, 1]], // O
@@ -126,6 +124,14 @@
                 }
             }
             return false;
+        }
+
+        function getGhostPosition() {
+            const ghostPos = { ...currentPiecePos };
+            while (!collide(currentPiece, { ...ghostPos, y: ghostPos.y + 1 })) {
+                ghostPos.y++;
+            }
+            return ghostPos;
         }
 
         function rotate() {
@@ -190,6 +196,24 @@
                     }
                 });
             });
+
+            // Draw ghost piece
+            if (currentPiece) {
+                const ghostPos = getGhostPosition();
+                context.fillStyle = `${currentColor}33`; // 33 is 20% opacity in hex
+                currentPiece.forEach((row, y) => {
+                    row.forEach((value, x) => {
+                        if (value) {
+                            context.fillRect(
+                                (ghostPos.x + x) * blockSize,
+                                (ghostPos.y + y) * blockSize,
+                                blockSize - 1,
+                                blockSize - 1
+                            );
+                        }
+                    });
+                });
+            }
 
             // Draw current piece
             if (currentPiece) {
