@@ -11,6 +11,8 @@ A modern implementation of the classic Tetris game with endless gameplay and lev
 - Smooth piece rotation and movement
 - Hard drop functionality
 - Clean, minimalist interface
+- Ghost pieces
+- "Next Item" Preview
 
 ## 🎯 How to Play
 ### Controls
