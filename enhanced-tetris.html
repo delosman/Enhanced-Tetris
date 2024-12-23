@@ -22,10 +22,32 @@
             align-items: center;
         }
 
+        .game-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .preview-label {
+            color: var(--tetris-cyan);
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
         canvas {
             border: 4px solid var(--tetris-cyan);
             border-radius: 8px;
             box-shadow: 0 0 20px rgba(0, 240, 240, 0.2);
+        }
+
+        #preview {
+            background: #000;
         }
 
         #stats {
@@ -55,7 +77,14 @@
         <div id="level">Level: 1</div>
     </div>
 
-    <canvas id="tetris" width="240" height="400"></canvas>
+    <div class="game-container">
+        <canvas id="tetris" width="240" height="400"></canvas>
+        
+        <div class="preview-container">
+            <div class="preview-label">Next Piece:</div>
+            <canvas id="preview" width="100" height="100"></canvas>
+        </div>
+    </div>
 
     <div id="controls">
         Controls:<br>
@@ -68,6 +97,8 @@
     <script>
         const canvas = document.getElementById('tetris');
         const context = canvas.getContext('2d');
+        const previewCanvas = document.getElementById('preview');
+        const previewContext = previewCanvas.getContext('2d');
         const scoreElement = document.getElementById('score');
         const levelElement = document.getElementById('level');
         const blockSize = 20;
@@ -97,15 +128,52 @@
         let currentPiece = null;
         let currentPiecePos = { x: 0, y: 0 };
         let currentColor = '';
+        let nextPiece = null;
+        let nextColor = '';
 
         function createPiece() {
+            if (nextPiece === null) {
+                const pieceIndex = Math.floor(Math.random() * pieces.length);
+                nextPiece = pieces[pieceIndex];
+                nextColor = colors[pieceIndex];
+            }
+
+            currentPiece = nextPiece;
+            currentColor = nextColor;
+            
             const pieceIndex = Math.floor(Math.random() * pieces.length);
-            currentPiece = pieces[pieceIndex];
-            currentColor = colors[pieceIndex];
+            nextPiece = pieces[pieceIndex];
+            nextColor = colors[pieceIndex];
+            
             currentPiecePos = {
                 x: Math.floor((cols - currentPiece[0].length) / 2),
                 y: 0
             };
+
+            drawPreview();
+        }
+
+        function drawPreview() {
+            previewContext.fillStyle = '#000';
+            previewContext.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+            const previewBlockSize = 20;
+            const offsetX = (previewCanvas.width - nextPiece[0].length * previewBlockSize) / 2;
+            const offsetY = (previewCanvas.height - nextPiece.length * previewBlockSize) / 2;
+
+            previewContext.fillStyle = nextColor;
+            nextPiece.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        previewContext.fillRect(
+                            offsetX + x * previewBlockSize,
+                            offsetY + y * previewBlockSize,
+                            previewBlockSize - 1,
+                            previewBlockSize - 1
+                        );
+                    }
+                });
+            });
         }
 
         function collide(piece = currentPiece, pos = currentPiecePos) {
@@ -200,7 +268,7 @@
             // Draw ghost piece
             if (currentPiece) {
                 const ghostPos = getGhostPosition();
-                context.fillStyle = `${currentColor}33`; // 33 is 20% opacity in hex
+                context.fillStyle = `${currentColor}33`;
                 currentPiece.forEach((row, y) => {
                     row.forEach((value, x) => {
                         if (value) {
