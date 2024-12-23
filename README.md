@@ -1,7 +1,7 @@
 # Enhanced Tetris
 A modern implementation of the classic Tetris game with endless gameplay and level progression. Built with HTML, CSS, and JavaScript.
 
-![Game Preview](./samp-img.png)
+<img src="./samp-img.png" alt="Game Preview" width="400">
 
 ## 🎮 Features
 - Endless gameplay mode
