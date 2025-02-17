@@ -13,6 +13,7 @@ A modern implementation of the classic Tetris game with endless gameplay and lev
 - Clean, minimalist interface
 - Ghost pieces
 - "Next Item" Preview
+- Piece holding system
 
 ## 🎯 How to Play
 ### Controls
@@ -21,6 +22,7 @@ A modern implementation of the classic Tetris game with endless gameplay and lev
 - **Up Arrow (↑)** - Rotate piece
 - **Down Arrow (↓)** - Soft drop
 - **Spacebar** - Hard drop
+- **Shift** - Hold/swap current piece
 
 ### Scoring
 - Clear lines to earn points
@@ -33,9 +35,7 @@ A modern implementation of the classic Tetris game with endless gameplay and lev
 ```bash
 git clone https://github.com/callmeianwu/enhanced-tetris.git
 ```
-
 2. Open `enhanced-tetris.html` in your preferred web browser
-
 3. Start playing!
 
 ## 🛠️ Technical Details
