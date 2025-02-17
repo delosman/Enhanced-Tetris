@@ -28,13 +28,19 @@
             align-items: flex-start;
         }
 
-        .preview-container {
+        .side-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .preview-container, .hold-container {
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        .preview-label {
+        .preview-label, .hold-label {
             color: var(--tetris-cyan);
             margin-bottom: 10px;
             font-size: 18px;
@@ -46,7 +52,7 @@
             box-shadow: 0 0 20px rgba(0, 240, 240, 0.2);
         }
 
-        #preview {
+        #preview, #hold {
             background: #000;
         }
 
@@ -78,11 +84,18 @@
     </div>
 
     <div class="game-container">
+        <div class="hold-container">
+            <div class="hold-label">Hold:</div>
+            <canvas id="hold" width="100" height="100"></canvas>
+        </div>
+
         <canvas id="tetris" width="240" height="400"></canvas>
         
-        <div class="preview-container">
-            <div class="preview-label">Next Piece:</div>
-            <canvas id="preview" width="100" height="100"></canvas>
+        <div class="side-container">
+            <div class="preview-container">
+                <div class="preview-label">Next:</div>
+                <canvas id="preview" width="100" height="100"></canvas>
+            </div>
         </div>
     </div>
 
@@ -91,7 +104,8 @@
         ← → : Move<br>
         ↑ : Rotate<br>
         ↓ : Drop<br>
-        Space : Hard Drop
+        Space : Hard Drop<br>
+        Shift : Hold
     </div>
 
     <script>
@@ -99,6 +113,8 @@
         const context = canvas.getContext('2d');
         const previewCanvas = document.getElementById('preview');
         const previewContext = previewCanvas.getContext('2d');
+        const holdCanvas = document.getElementById('hold');
+        const holdContext = holdCanvas.getContext('2d');
         const scoreElement = document.getElementById('score');
         const levelElement = document.getElementById('level');
         const blockSize = 20;
@@ -107,6 +123,7 @@
         let score = 0;
         let level = 1;
         let linesCleared = 0;
+        let canHold = true;
 
         const board = Array(rows).fill().map(() => Array(cols).fill(0));
 
@@ -128,44 +145,50 @@
         let currentPiece = null;
         let currentPiecePos = { x: 0, y: 0 };
         let currentColor = '';
+        let currentPieceIndex = 0;
         let nextPiece = null;
         let nextColor = '';
+        let nextPieceIndex = 0;
+        let holdPiece = null;
+        let holdColor = '';
+        let holdPieceIndex = -1;
 
         function createPiece() {
             if (nextPiece === null) {
-                const pieceIndex = Math.floor(Math.random() * pieces.length);
-                nextPiece = pieces[pieceIndex];
-                nextColor = colors[pieceIndex];
+                nextPieceIndex = Math.floor(Math.random() * pieces.length);
+                nextPiece = pieces[nextPieceIndex];
+                nextColor = colors[nextPieceIndex];
             }
 
             currentPiece = nextPiece;
             currentColor = nextColor;
+            currentPieceIndex = nextPieceIndex;
             
             const pieceIndex = Math.floor(Math.random() * pieces.length);
             nextPiece = pieces[pieceIndex];
             nextColor = colors[pieceIndex];
+            nextPieceIndex = pieceIndex;
             
             currentPiecePos = {
                 x: Math.floor((cols - currentPiece[0].length) / 2),
                 y: 0
             };
 
+            canHold = true;
             drawPreview();
+            drawHold();
         }
 
-        function drawPreview() {
-            previewContext.fillStyle = '#000';
-            previewContext.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
-
+        function drawPiece(context, piece, color, canvas) {
             const previewBlockSize = 20;
-            const offsetX = (previewCanvas.width - nextPiece[0].length * previewBlockSize) / 2;
-            const offsetY = (previewCanvas.height - nextPiece.length * previewBlockSize) / 2;
+            const offsetX = (canvas.width - piece[0].length * previewBlockSize) / 2;
+            const offsetY = (canvas.height - piece.length * previewBlockSize) / 2;
 
-            previewContext.fillStyle = nextColor;
-            nextPiece.forEach((row, y) => {
+            context.fillStyle = color;
+            piece.forEach((row, y) => {
                 row.forEach((value, x) => {
                     if (value) {
-                        previewContext.fillRect(
+                        context.fillRect(
                             offsetX + x * previewBlockSize,
                             offsetY + y * previewBlockSize,
                             previewBlockSize - 1,
@@ -174,6 +197,53 @@
                     }
                 });
             });
+        }
+
+        function drawPreview() {
+            previewContext.fillStyle = '#000';
+            previewContext.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+            if (nextPiece) {
+                drawPiece(previewContext, nextPiece, nextColor, previewCanvas);
+            }
+        }
+
+        function drawHold() {
+            holdContext.fillStyle = '#000';
+            holdContext.fillRect(0, 0, holdCanvas.width, holdCanvas.height);
+            if (holdPiece) {
+                drawPiece(holdContext, holdPiece, holdColor, holdCanvas);
+            }
+        }
+
+        function holdCurrentPiece() {
+            if (!canHold) return;
+
+            if (holdPiece === null) {
+                holdPiece = currentPiece;
+                holdColor = currentColor;
+                holdPieceIndex = currentPieceIndex;
+                createPiece();
+            } else {
+                const tempPiece = currentPiece;
+                const tempColor = currentColor;
+                const tempIndex = currentPieceIndex;
+
+                currentPiece = holdPiece;
+                currentColor = holdColor;
+                currentPieceIndex = holdPieceIndex;
+                
+                holdPiece = tempPiece;
+                holdColor = tempColor;
+                holdPieceIndex = tempIndex;
+
+                currentPiecePos = {
+                    x: Math.floor((cols - currentPiece[0].length) / 2),
+                    y: 0
+                };
+            }
+
+            canHold = false;
+            drawHold();
         }
 
         function collide(piece = currentPiece, pos = currentPiecePos) {
@@ -332,8 +402,12 @@
                     score = 0;
                     level = 1;
                     linesCleared = 0;
+                    holdPiece = null;
+                    holdColor = '';
+                    holdPieceIndex = -1;
                     scoreElement.textContent = `Score: ${score}`;
                     levelElement.textContent = `Level: ${level}`;
+                    drawHold();
                 }
             }
             dropCounter = 0;
@@ -363,6 +437,9 @@
                     }
                     currentPiecePos.y--;
                     drop();
+                    break;
+                case 16: // Shift (hold)
+                    holdCurrentPiece();
                     break;
             }
         });
