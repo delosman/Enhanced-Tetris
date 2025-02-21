@@ -853,18 +853,22 @@
     let animationFrameId = null;
 
     function update(time = 0) {
-      const deltaTime = time - lastTime;
-      lastTime = time;
-      if (!isPaused) {
+        if (isPaused) {
+            return;
+        }
+        const deltaTime = time - lastTime;
+        lastTime = time;
         dropCounter += deltaTime;
         dropInterval = Math.max(50, 1000 - (level - 1) * 100);
         if (dropCounter > dropInterval) {
-          drop();
+            drop();
         }
-      }
-      draw();
-      animationFrameId = requestAnimationFrame(update);
+        draw();
+        if (!isPaused) {
+            animationFrameId = requestAnimationFrame(update);
+        }
     }
+
 
     function drop() {
       currentPiecePos.y++;
