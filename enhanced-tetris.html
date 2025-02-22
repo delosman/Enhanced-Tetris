@@ -327,6 +327,7 @@
   </div>
 
   <script>
+    
     // Global AudioContext
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -345,6 +346,11 @@
     let level = 1;
     let linesCleared = 0;
     let canHold = true;
+
+    const offscreenCanvas = document.createElement("canvas");
+    offscreenCanvas.width = canvas.width;
+    offscreenCanvas.height = canvas.height;
+    const offscreenContext = offscreenCanvas.getContext("2d");
 
     // Disable image smoothing for a crisp, retro look
     context.imageSmoothingEnabled = false;
@@ -718,6 +724,14 @@
             const boardY = currentPiecePos.y + y;
             if (boardY >= 0) {
               board[boardY][currentPiecePos.x + x] = currentColor;
+              // Draw to offscreen canvas
+              offscreenContext.fillStyle = currentColor;
+              offscreenContext.fillRect(
+                (currentPiecePos.x + x) * blockSize,
+                boardY * blockSize,
+                blockSize - 2,
+                blockSize - 2
+              );
             }
           }
         });
@@ -732,8 +746,23 @@
         }
         const row = board.splice(y, 1)[0];
         board.unshift(row.fill(0));
-        y++;
         lines++;
+        // Update offscreen canvas for cleared line
+        offscreenContext.clearRect(0, y * blockSize, canvas.width, blockSize);
+        for (let newY = y; newY > 0; newY--) {
+          for (let x = 0; x < cols; x++) {
+            if (board[newY][x]) {
+              offscreenContext.fillStyle = board[newY][x];
+              offscreenContext.fillRect(
+                x * blockSize,
+                newY * blockSize,
+                blockSize - 2,
+                blockSize - 2
+              );
+            }
+          }
+        }
+        y++;
       }
       if (lines > 0) {
         linesCleared += lines;
@@ -769,69 +798,13 @@
     function draw() {
       context.fillStyle = "#000";
       context.fillRect(0, 0, canvas.width, canvas.height);
-      drawGridBackground(context, canvas);
-      drawWithCRTEffect(context, () => {
-        board.forEach((row, y) => {
-          row.forEach((value, x) => {
-            if (value) {
-              context.fillStyle = value;
-              context.shadowBlur = 3;
-              context.shadowColor = value;
-              context.fillRect(
-                x * blockSize,
-                y * blockSize,
-                blockSize - 2,
-                blockSize - 2
-              );
-              context.shadowBlur = 0;
-              context.fillStyle = lightenColor(value, 50);
-              context.fillRect(x * blockSize + 2, y * blockSize + 2, 3, 3);
-            }
-          });
-        });
-        if (currentPiece) {
-          const ghostPos = getGhostPosition();
-          context.fillStyle = currentShadowColor;
-          currentPiece.forEach((row, y) => {
-            row.forEach((value, x) => {
-              if (value) {
-                context.fillRect(
-                  (ghostPos.x + x) * blockSize + 1,
-                  (ghostPos.y + y) * blockSize + 1,
-                  blockSize - 4,
-                  blockSize - 4
-                );
-              }
-            });
-          });
-        }
-        if (currentPiece) {
-          context.fillStyle = currentColor;
-          context.shadowBlur = 3;
-          context.shadowColor = currentColor;
-          currentPiece.forEach((row, y) => {
-            row.forEach((value, x) => {
-              if (value) {
-                context.fillRect(
-                  (currentPiecePos.x + x) * blockSize,
-                  (currentPiecePos.y + y) * blockSize,
-                  blockSize - 2,
-                  blockSize - 2
-                );
-                context.fillStyle = lightenColor(currentColor, 50);
-                context.fillRect(
-                  (currentPiecePos.x + x) * blockSize + 2,
-                  (currentPiecePos.y + y) * blockSize + 2,
-                  3,
-                  3
-                );
-                context.fillStyle = currentColor;
-              }
-            });
-          });
-          context.shadowBlur = 0;
-        }
-      });
+
+      // Draw cached static blocks from offscreen canvas
+      context.drawImage(offscreenCanvas, 0, 0);
+
+      // Draw dynamic elements (ghost piece, current piece)
+      drawGhostPiece();
+      drawCurrentPiece();
       if (isPaused) {
         context.fillStyle = "rgba(0, 0, 0, 0.7)";
         context.fillRect(0, 0, canvas.width, canvas.height);
@@ -845,6 +818,39 @@
         context.fillText("PRESS P TO RESUME", canvas.width / 2, canvas.height / 2 + 20);
         context.shadowBlur = 0;
       }
+    }
+
+    function drawGhostPiece() {
+      const ghostPos = getGhostPosition();
+      context.fillStyle = currentShadowColor;
+      currentPiece.forEach((row, y) => {
+        row.forEach((value, x) => {
+          if (value) {
+            context.fillRect(
+              (ghostPos.x + x) * blockSize,
+              (ghostPos.y + y) * blockSize,
+              blockSize - 2,
+              blockSize - 2
+            );
+          }
+        });
+      });
+    }
+
+    function drawCurrentPiece() {
+      context.fillStyle = currentColor;
+      currentPiece.forEach((row, y) => {
+        row.forEach((value, x) => {
+          if (value) {
+            context.fillRect(
+              (currentPiecePos.x + x) * blockSize,
+              (currentPiecePos.y + y) * blockSize,
+              blockSize - 2,
+              blockSize - 2
+            );
+          }
+        });
+      });
     }
 
     let dropCounter = 0;
@@ -1088,6 +1094,27 @@
       },
       false
     );
+
+    // Initialize grid once
+    function initializeGrid() {
+      offscreenContext.strokeStyle = "#222222";
+      offscreenContext.lineWidth = 0.5;
+      for (let x = 0; x <= canvas.width; x += 20) {
+        offscreenContext.beginPath();
+        offscreenContext.moveTo(x, 0);
+        offscreenContext.lineTo(x, canvas.height);
+        offscreenContext.stroke();
+      }
+      for (let y = 0; y <= canvas.height; y += 20) {
+        offscreenContext.beginPath();
+        offscreenContext.moveTo(0, y);
+        offscreenContext.lineTo(canvas.width, y);
+        offscreenContext.stroke();
+      }
+    }
+
+    // Call this once during initialization
+    initializeGrid();
 
     // Boot sequence using a DOM overlay with text animation
     function bootSequence() {
