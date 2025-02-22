@@ -710,6 +710,11 @@
       }
     }
 
+    const boardCache = document.createElement("canvas");
+    boardCache.width = canvas.width;
+    boardCache.height = canvas.height;
+    const boardCtx = boardCache.getContext("2d");
+
     function merge() {
       playSound("drop");
       currentPiece.forEach((row, y) => {
@@ -718,134 +723,144 @@
             const boardY = currentPiecePos.y + y;
             if (boardY >= 0) {
               board[boardY][currentPiecePos.x + x] = currentColor;
+              // Draw to the offscreen canvas (instead of recalculating each frame)
+              boardCtx.fillStyle = currentColor;
+              boardCtx.shadowBlur = 3;
+              boardCtx.shadowColor = currentColor;
+              boardCtx.fillRect(
+                (currentPiecePos.x + x) * blockSize,
+                (boardY) * blockSize,
+                blockSize - 2,
+                blockSize - 2
+              );
             }
           }
         });
       });
     }
 
+
     function clearLines() {
-      let lines = 0;
-      outer: for (let y = rows - 1; y >= 0; y--) {
-        for (let x = 0; x < cols; x++) {
-          if (!board[y][x]) continue outer;
+        let lines = 0;
+        for (let y = rows - 1; y >= 0; y--) {
+            if (board[y].every(cell => cell !== 0)) {  // Check if the row is full
+                board.splice(y, 1);  // Remove full row
+                board.unshift(Array(cols).fill(0));  // Add a new empty row on top
+                lines++;
+                y++;  // Re-check the same row index since everything moved down
+            }
         }
-        const row = board.splice(y, 1)[0];
-        board.unshift(row.fill(0));
-        y++;
-        lines++;
+
+        if (lines > 0) {
+            linesCleared += lines;
+            const lineScores = [0, 40, 100, 300, 1200];  // Standard Tetris scoring
+            score += lineScores[lines] * level;
+            if (lines === 4) {
+                playSound("tetris");
+            } else {
+                playSound("line");
+            }
+            scoreElement.textContent = `SCORE:${score}`;
+            level = Math.floor(linesCleared / 10) + 1;
+            levelElement.textContent = `LEVEL:${level}`;
+
+            
+            redrawBoardCache();
+        }
+    }
+
+
+    // Create and cache the grid background:
+    const gridCache = document.createElement("canvas");
+    gridCache.width = canvas.width;
+    gridCache.height = canvas.height;
+    const gridCtx = gridCache.getContext("2d");
+
+    // Function to create the grid once
+    function createGridCache() {
+      gridCtx.clearRect(0, 0, gridCache.width, gridCache.height);
+      gridCtx.strokeStyle = "#222222";
+      gridCtx.lineWidth = 0.5;
+
+      // Draw vertical lines
+      for (let x = 0; x <= gridCache.width; x += blockSize) {
+        gridCtx.beginPath();
+        gridCtx.moveTo(x, 0);
+        gridCtx.lineTo(x, gridCache.height);
+        gridCtx.stroke();
       }
-      if (lines > 0) {
-        linesCleared += lines;
-        const lineScores = [0, 40, 100, 300, 1200];
-        score += lineScores[lines] * level;
-        if (lines === 4) {
-          playSound("tetris");
-        } else if (lines > 0) {
-          playSound("line");
-        }
-        scoreElement.textContent = `SCORE:${score}`;
-        const newLevel = Math.floor(linesCleared / 10) + 1;
-        if (newLevel !== level) {
-          level = newLevel;
-          levelElement.textContent = `LEVEL:${level}`;
-          const flash = document.createElement("div");
-          flash.style.position = "fixed";
-          flash.style.top = "0";
-          flash.style.left = "0";
-          flash.style.width = "100%";
-          flash.style.height = "100%";
-          flash.style.backgroundColor = "rgba(57, 255, 20, 0.2)";
-          flash.style.zIndex = "9999";
-          flash.style.pointerEvents = "none";
-          document.body.appendChild(flash);
-          setTimeout(() => {
-            document.body.removeChild(flash);
-          }, 200);
-        }
+
+      // Draw horizontal lines
+      for (let y = 0; y <= gridCache.height; y += blockSize) {
+        gridCtx.beginPath();
+        gridCtx.moveTo(0, y);
+        gridCtx.lineTo(gridCache.width, y);
+        gridCtx.stroke();
       }
+    }
+    createGridCache();
+
+    function redrawBoardCache() {
+        boardCtx.clearRect(0, 0, boardCache.width, boardCache.height);  // Clear the entire cached board
+
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                if (board[y][x]) {  // If there's a block
+                    boardCtx.fillStyle = board[y][x];  // Use the stored color
+                    boardCtx.shadowBlur = 3;
+                    boardCtx.shadowColor = board[y][x];
+                    boardCtx.fillRect(
+                        x * blockSize,
+                        y * blockSize,
+                        blockSize - 2,
+                        blockSize - 2
+                    );
+                }
+            }
+        }
     }
 
     function draw() {
       context.fillStyle = "#000";
       context.fillRect(0, 0, canvas.width, canvas.height);
-      drawGridBackground(context, canvas);
-      drawWithCRTEffect(context, () => {
-        board.forEach((row, y) => {
+      context.drawImage(gridCache, 0, 0);  // Use cached grid
+      context.drawImage(boardCache, 0, 0); // Use cached board
+      
+      if (currentPiece) {
+        const ghostPos = getGhostPosition();
+        context.fillStyle = currentShadowColor;
+        currentPiece.forEach((row, y) => {
           row.forEach((value, x) => {
             if (value) {
-              context.fillStyle = value;
-              context.shadowBlur = 3;
-              context.shadowColor = value;
               context.fillRect(
-                x * blockSize,
-                y * blockSize,
-                blockSize - 2,
-                blockSize - 2
+                (ghostPos.x + x) * blockSize + 1,
+                (ghostPos.y + y) * blockSize + 1,
+                blockSize - 4,
+                blockSize - 4
               );
-              context.shadowBlur = 0;
-              context.fillStyle = lightenColor(value, 50);
-              context.fillRect(x * blockSize + 2, y * blockSize + 2, 3, 3);
             }
           });
         });
-        if (currentPiece) {
-          const ghostPos = getGhostPosition();
-          context.fillStyle = currentShadowColor;
-          currentPiece.forEach((row, y) => {
-            row.forEach((value, x) => {
-              if (value) {
-                context.fillRect(
-                  (ghostPos.x + x) * blockSize + 1,
-                  (ghostPos.y + y) * blockSize + 1,
-                  blockSize - 4,
-                  blockSize - 4
-                );
-              }
-            });
+
+        context.fillStyle = currentColor;
+        context.shadowBlur = 3;
+        context.shadowColor = currentColor;
+        currentPiece.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (value) {
+              context.fillRect(
+                (currentPiecePos.x + x) * blockSize,
+                (currentPiecePos.y + y) * blockSize,
+                blockSize - 2,
+                blockSize - 2
+              );
+            }
           });
-        }
-        if (currentPiece) {
-          context.fillStyle = currentColor;
-          context.shadowBlur = 3;
-          context.shadowColor = currentColor;
-          currentPiece.forEach((row, y) => {
-            row.forEach((value, x) => {
-              if (value) {
-                context.fillRect(
-                  (currentPiecePos.x + x) * blockSize,
-                  (currentPiecePos.y + y) * blockSize,
-                  blockSize - 2,
-                  blockSize - 2
-                );
-                context.fillStyle = lightenColor(currentColor, 50);
-                context.fillRect(
-                  (currentPiecePos.x + x) * blockSize + 2,
-                  (currentPiecePos.y + y) * blockSize + 2,
-                  3,
-                  3
-                );
-                context.fillStyle = currentColor;
-              }
-            });
-          });
-          context.shadowBlur = 0;
-        }
-      });
-      if (isPaused) {
-        context.fillStyle = "rgba(0, 0, 0, 0.7)";
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        context.font = "16px 'Press Start 2P'";
-        context.fillStyle = "#39ff14";
-        context.textAlign = "center";
-        context.shadowBlur = 10;
-        context.shadowColor = "#39ff14";
-        context.fillText("PAUSED", canvas.width / 2, canvas.height / 2 - 10);
-        context.font = "8px 'Press Start 2P'";
-        context.fillText("PRESS P TO RESUME", canvas.width / 2, canvas.height / 2 + 20);
+        });
         context.shadowBlur = 0;
       }
     }
+
 
     let dropCounter = 0;
     let lastTime = 0;
@@ -853,17 +868,18 @@
     let animationFrameId = null;
 
     function update(time = 0) {
-        if (isPaused) {
-            return;
+        if (!isPaused) { // Only update if NOT paused
+            const deltaTime = time - lastTime;
+            lastTime = time;
+            dropCounter += deltaTime;
+            dropInterval = Math.max(50, 1000 - (level - 1) * 100);
+            if (dropCounter > dropInterval) {
+                drop();
+            }
         }
-        const deltaTime = time - lastTime;
-        lastTime = time;
-        dropCounter += deltaTime;
-        dropInterval = Math.max(50, 1000 - (level - 1) * 100);
-        if (dropCounter > dropInterval) {
-            drop();
-        }
-        draw();
+
+        draw(); // Always redraw, even if paused
+
         if (!isPaused) {
             animationFrameId = requestAnimationFrame(update);
         }
@@ -871,55 +887,102 @@
 
 
     function drop() {
-      currentPiecePos.y++;
-      if (collide()) {
-        currentPiecePos.y--;
-        merge();
-        clearLines();
-        createPiece();
+        currentPiecePos.y++;
         if (collide()) {
-          playSound("gameover");
-          const gameOverEffect = () => {
-            let row = rows - 1;
-            const fillInterval = setInterval(() => {
-              if (row < 0) {
-                clearInterval(fillInterval);
-                setTimeout(() => {
-                  board.forEach((row) => row.fill(0));
-                  score = 0;
-                  level = 1;
-                  linesCleared = 0;
-                  holdPiece = null;
-                  holdColor = "";
-                  holdShadowColor = "";
-                  holdPieceIndex = -1;
-                  scoreElement.textContent = `SCORE:0`;
-                  levelElement.textContent = `LEVEL:1`;
-                  drawHold();
-                  playStartupSound();
-                }, 500);
-                return;
-              }
-              for (let x = 0; x < cols; x++) {
-                board[row][x] = colors[Math.floor(Math.random() * colors.length)];
-              }
-              row--;
-            }, 30);
-          };
-          gameOverEffect();
+            currentPiecePos.y--;
+            merge();
+            clearLines();
+            createPiece();
+
+            if (collide()) {  // If a new piece collides immediately -> Game Over
+                playSound("gameover");
+
+                const gameOverEffect = () => {
+                    let row = rows - 1;
+                    const fillInterval = setInterval(() => {
+                        if (row < 0) {
+                            clearInterval(fillInterval);
+                            setTimeout(() => {
+                                // Reset Game Logic
+                                board.forEach((row) => row.fill(0));
+                                score = 0;
+                                level = 1;
+                                linesCleared = 0;
+                                holdPiece = null;
+                                holdColor = "";
+                                holdShadowColor = "";
+                                holdPieceIndex = -1;
+                                scoreElement.textContent = `SCORE:0`;
+                                levelElement.textContent = `LEVEL:1`;
+
+                                // **🔥 Fix: Also clear boardCache to reset visuals**
+                                redrawBoardCache();
+
+                                // Restart Game
+                                drawHold();
+                                playStartupSound();
+                            }, 500);
+                            return;
+                        }
+
+                        for (let x = 0; x < cols; x++) {
+                            board[row][x] = colors[Math.floor(Math.random() * colors.length)];
+                        }
+                        row--;
+                    }, 30);
+                };
+
+                gameOverEffect();
+            }
         }
-      }
-      dropCounter = 0;
+        dropCounter = 0;
     }
 
+
     function togglePause() {
-      isPaused = !isPaused;
-      if (isPaused) {
-        playSound("pause");
-      } else {
-        playSound("resume");
-      }
+    isPaused = !isPaused;
+
+        if (isPaused) {
+            playSound("pause");
+            showPauseOverlay(); // Show pause message
+        } else {
+            playSound("resume");
+            hidePauseOverlay(); // Hide pause message
+            lastTime = performance.now(); // Reset time tracking
+            requestAnimationFrame(update); // Resume game loop
+        }
     }
+
+    function showPauseOverlay() {
+        let pauseOverlay = document.getElementById("pauseOverlay");
+        if (!pauseOverlay) {
+            pauseOverlay = document.createElement("div");
+            pauseOverlay.id = "pauseOverlay";
+            pauseOverlay.textContent = "PAUSED";
+            pauseOverlay.style.position = "fixed";
+            pauseOverlay.style.top = "50%";
+            pauseOverlay.style.left = "50%";
+            pauseOverlay.style.transform = "translate(-50%, -50%)";
+            pauseOverlay.style.fontSize = "24px";
+            pauseOverlay.style.color = "var(--tetris-cyan)";
+            pauseOverlay.style.textShadow = "0 0 10px rgba(57, 255, 20, 0.8)";
+            pauseOverlay.style.fontFamily = '"Press Start 2P", monospace';
+            pauseOverlay.style.background = "rgba(0, 0, 0, 0.7)";
+            pauseOverlay.style.padding = "20px";
+            pauseOverlay.style.borderRadius = "5px";
+            pauseOverlay.style.zIndex = "1000";
+            document.body.appendChild(pauseOverlay);
+        }
+    }
+
+    function hidePauseOverlay() {
+        const pauseOverlay = document.getElementById("pauseOverlay");
+        if (pauseOverlay) {
+            pauseOverlay.remove();
+        }
+    }
+
+
 
     // Custom key repeat implementation to fix input delays
     const keyRepeatDelay = 150; // initial delay before repeating (ms)
