@@ -1091,44 +1091,130 @@
 
     // Boot sequence using a DOM overlay with text animation
     function bootSequence() {
-      const bootOverlay = document.getElementById("bootOverlay");
-      const bootText = document.getElementById("bootText");
-      const bootLines = [
-        "SYSTEM BOOT v3.7",
-        "INITIALIZING...",
-        "LOADING TETRIS OS",
-        "READY.",
-      ];
-      let lineIndex = 0;
-      function typeNextLine() {
-        if (lineIndex >= bootLines.length) {
-          setTimeout(() => {
-            bootOverlay.style.transition = "opacity 0.5s";
-            bootOverlay.style.opacity = "0";
-            setTimeout(() => {
-              bootOverlay.remove();
-              createPiece();
-              playStartupSound();
-              update();
-            }, 500);
-          }, 500);
-          return;
-        }
-        let charIndex = 0;
-        bootText.textContent = "";
-        const lineInterval = setInterval(() => {
-          bootText.textContent += bootLines[lineIndex][charIndex];
-          charIndex++;
-          if (charIndex >= bootLines[lineIndex].length) {
-            clearInterval(lineInterval);
-            bootText.textContent += "\n";
-            lineIndex++;
-            setTimeout(typeNextLine, 300);
-          }
-        }, 50);
-      }
-      typeNextLine();
+  const bootOverlay = document.getElementById("bootOverlay");
+  const bootText = document.getElementById("bootText");
+  const bootLines = [
+    "SYSTEM BOOT v3.7",
+    "INITIALIZING...",
+    "LOADING TETRIS OS",
+    "READY.",
+  ];
+  
+  // Create a simple "click" sound for typing
+  function playTypeSound() {
+    const clickOsc = audioContext.createOscillator();
+    const clickGain = audioContext.createGain();
+    clickOsc.connect(clickGain);
+    clickGain.connect(audioContext.destination);
+    
+    clickGain.gain.value = 0.03;
+    clickOsc.frequency.value = 2000 + Math.random() * 500;
+    clickOsc.type = "square";
+    
+    clickOsc.start();
+    clickOsc.stop(audioContext.currentTime + 0.01);
+  }
+  
+  // Play a line completion sound
+  function playLineCompleteSound(lineIndex) {
+    const completeOsc = audioContext.createOscillator();
+    const completeGain = audioContext.createGain();
+    completeOsc.connect(completeGain);
+    completeGain.connect(audioContext.destination);
+    
+    completeGain.gain.value = 0.1;
+    completeOsc.frequency.value = 440 + (lineIndex * 110);
+    completeOsc.type = "sine";
+    
+    completeOsc.start();
+    completeGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
+    completeOsc.stop(audioContext.currentTime + 0.3);
+  }
+  
+  let lineIndex = 0;
+  function typeNextLine() {
+    if (lineIndex >= bootLines.length) {
+      setTimeout(() => {
+        // Final boot complete sound
+        const finalChord = audioContext.createOscillator();
+        const finalGain = audioContext.createGain();
+        finalChord.connect(finalGain);
+        finalGain.connect(audioContext.destination);
+        
+        finalGain.gain.value = 0.2;
+        finalChord.frequency.value = 880;
+        finalChord.type = "triangle";
+        
+        finalChord.start();
+        finalChord.frequency.exponentialRampToValueAtTime(1760, audioContext.currentTime + 0.5);
+        finalGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
+        finalChord.stop(audioContext.currentTime + 0.8);
+        
+        bootOverlay.style.transition = "opacity 0.5s";
+        bootOverlay.style.opacity = "0";
+        setTimeout(() => {
+          bootOverlay.remove();
+          createPiece();
+          playStartupSound();
+          update();
+        }, 800);
+      }, 500);
+      return;
     }
+    
+    let charIndex = 0;
+    bootText.textContent = "";
+    const lineInterval = setInterval(() => {
+      if (charIndex % 2 === 0) {
+        playTypeSound();
+      }
+      
+      bootText.textContent += bootLines[lineIndex][charIndex];
+      charIndex++;
+      
+      if (charIndex >= bootLines[lineIndex].length) {
+        clearInterval(lineInterval);
+        bootText.textContent += "\n";
+        playLineCompleteSound(lineIndex);
+        lineIndex++;
+        setTimeout(typeNextLine, 300);
+      }
+    }, 50);
+  }
+  
+  // Initial boot noise
+  setTimeout(() => {
+    const startupNoise = audioContext.createBufferSource();
+    const noiseGain = audioContext.createGain();
+    const noiseFilter = audioContext.createBiquadFilter();
+    
+    // Create noise buffer
+    const bufferSize = audioContext.sampleRate;
+    const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+    
+    startupNoise.buffer = noiseBuffer;
+    noiseFilter.type = "bandpass";
+    noiseFilter.frequency.value = 800;
+    noiseFilter.Q.value = 5;
+    
+    startupNoise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(audioContext.destination);
+    
+    noiseGain.gain.value = 0.05;
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
+    noiseFilter.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.3);
+    
+    startupNoise.start();
+    startupNoise.stop(audioContext.currentTime + 0.3);
+    
+    setTimeout(typeNextLine, 400);
+  }, 100);
+}
 
     bootSequence();
   </script>
