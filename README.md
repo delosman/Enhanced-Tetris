@@ -52,6 +52,7 @@ git clone https://github.com/callmeianwu/enhanced-tetris.git
 
 ## 📝 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 *Note: This is an independent implementation inspired by the classic game Tetris®. Tetris® is a registered trademark of The Tetris Company, LLC. This project is not affiliated with or endorsed by The Tetris Company.*
 
 ## 🙏 Acknowledgments
