@@ -14,6 +14,7 @@ A modern implementation of the classic Tetris game with endless gameplay and lev
 - Ghost pieces
 - "Next Item" Preview
 - Piece holding system
+- Sound effects created in real time
 
 ## 🎯 How to Play
 ### Controls
