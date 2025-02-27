@@ -394,7 +394,7 @@
     function playSound(type) {
       const gainNode = audioContext.createGain();
       gainNode.connect(audioContext.destination);
-      gainNode.gain.value = 0.15;
+      gainNode.gain.value = 0.05;
 
       const oscillator = audioContext.createOscillator();
       oscillator.connect(gainNode);
