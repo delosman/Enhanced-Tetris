@@ -357,7 +357,7 @@
     function playStartupSound() {
       const gainNode = audioContext.createGain();
       gainNode.connect(audioContext.destination);
-      gainNode.gain.value = 0.2;
+      gainNode.gain.value = 0.05;
 
       const playTone = (freq, duration, delay = 0) => {
         const oscillator = audioContext.createOscillator();
