@@ -2,6 +2,7 @@
 A modern implementation of the classic Tetris game with endless gameplay and level progression. Built purely with HTML and Javascript (with a bit of CSS ;))
 
 <img src="./samp-img.png" alt="Game Preview" width="400">
+
 Thank you for over 40k plays! 😁
 
 ## 🎮 Features
