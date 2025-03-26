@@ -206,7 +206,6 @@
     }
 
     #controls {
-      margin-top: 30px;
       padding: 15px;
       background: var(--panel-bg);
       border: 2px solid var(--tetris-cyan);
@@ -932,7 +931,7 @@
 
             if (collide()) {  // If a new piece collides immediately -> Game Over
                 playSound("gameover");
-                
+
                 saveHighScore(score);
 
                 loadHighScore();
