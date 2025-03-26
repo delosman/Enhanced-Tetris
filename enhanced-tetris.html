@@ -932,10 +932,13 @@
 
             if (collide()) {  // If a new piece collides immediately -> Game Over
                 playSound("gameover");
+                
                 saveHighScore(score);
+
+                loadHighScore();
+                updateHighScoreDisplay();
                 
                 const gameOverEffect = () => {
-                    loadHighScore();
                     let row = rows - 1;
                     const fillInterval = setInterval(() => {
                         if (row < 0) {
