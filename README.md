@@ -17,6 +17,7 @@ Thank you for over 40k plays! 😁
 - "Next Item" Preview
 - Piece holding system
 - Sound effects created in real time
+- Local storage saving for high score!
 
 ## 🎯 How to Play
 ### Controls
