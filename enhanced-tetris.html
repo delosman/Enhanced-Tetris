@@ -933,11 +933,16 @@
             if (collide()) {  // If a new piece collides immediately -> Game Over
                 playSound("gameover");
 
-                saveHighScore(score);
+                // Save high score if the current score is greater
+                if (score > highScore) {
+                    highScore = score;
+                    saveHighScore(highScore);
+                }
 
-                loadHighScore();
-                updateHighScoreDisplay();
-                
+                // Load and update high score display
+                highScore = loadHighScore();
+                updateHighScoreDisplay(highScore);
+
                 const gameOverEffect = () => {
                     let row = rows - 1;
                     const fillInterval = setInterval(() => {
@@ -956,7 +961,7 @@
                                 scoreElement.textContent = `SCORE:0`;
                                 levelElement.textContent = `LEVEL:1`;
 
-                                // **🔥 Fix: Also clear boardCache to reset visuals**
+                                // Clear boardCache to reset visuals
                                 redrawBoardCache();
 
                                 // Restart Game
